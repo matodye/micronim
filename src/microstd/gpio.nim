@@ -30,7 +30,7 @@ type
     direction: PinDirection
     pull: Pull
 
-let pins: seq[Pin] = @[]
+var pins: seq[Pin] = @[]
 let usedPins = new array[0..35, bool]
 
 proc pin*(number: static int; direction: PinDirection; pull: Pull = Down): Pin =
@@ -80,3 +80,12 @@ proc low*(self: Pin) =
 
 proc is_used*(self: Pin): bool =
   usedPins[self.number]
+
+proc is_not_used*(self: Pin): bool =
+  not usedPins[self.number]
+
+proc forgive*(pin: Pin) =
+  if is_used pin:
+    pins.del(pin.number)
+    usedPins[pin.number] = false
+
