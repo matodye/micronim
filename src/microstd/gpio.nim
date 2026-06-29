@@ -29,6 +29,9 @@ type
     number: uint8
     direction: PinDirection
     pull: Pull
+  
+  PinState* = enum
+    high, low
 
 var pins: seq[Pin] = @[]
 let usedPins = new array[0..35, bool]
@@ -40,7 +43,7 @@ proc pin*(number: static int; direction: PinDirection; pull: Pull = Down): Pin =
       raise newException(NegativePinNumberError, error_msg)
     elif number > 35:
       let error_msg = "You set " & $number & " as a pin number, but the highest available is 35."
-      raise newException(PinNumberAbove35, error_msg)
+      raise newException(PinNumberAbove35Error, error_msg)
 
   if usedPins[number]:
     log(Caution, "You are binding a pin already used: " & $number & ". We will return the previous reference to this pin.")
@@ -78,6 +81,15 @@ proc high*(self: Pin) =
 proc low*(self: Pin) = 
   try: self.number.Gpio.put(Low) except: discard  # TODO: add logic & log an error
 
+proc write*(self: Pin; state: PinState) =
+  self.number.Gpio.put(state == high)
+
+proc write*(self: Pin; boolean: bool) =
+  self.number.Gpio.put(boolean)
+
+proc write*(self: Pin; integer: int) =
+  self.number.Gpio.put(integer != 0)
+
 proc is_used*(self: Pin): bool =
   usedPins[self.number]
 
@@ -88,4 +100,3 @@ proc forgive*(pin: Pin) =
   if is_used pin:
     pins.del(pin.number)
     usedPins[pin.number] = false
-
