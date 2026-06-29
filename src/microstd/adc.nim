@@ -6,8 +6,8 @@ type
     number: uint8
     direction: PinDirection
 
-proc adc*(pin: Pin): AdcPin = 
-  discard
+proc adc*(pin: Pin; direction: PinDirection): AdcPin =
+  return AdcPin(number: pin.number, direction: direction)
 
 proc adc_pin*(number: static int; direction: PinDirection): AdcPin =
-  pin(number, direction)
+  adc pin(number, direction)
