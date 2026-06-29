@@ -2,4 +2,5 @@ nimble.develop
 nimble.paths
 nimbledeps
 
+nothing
 nothing.nim

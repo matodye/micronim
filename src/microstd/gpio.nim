@@ -1,8 +1,11 @@
 import picostdlib/[gpio]
 
-import ./logger
+import ./[
+  errors,
+  logger
+]
 
-const GPIO_PINS: array[0..35, Gpio] = [
+const GPIO_PINS*: array[0..35, Gpio] = [
   0.Gpio, 10.Gpio, 20.Gpio, 30.Gpio,
   1.Gpio, 11.Gpio, 21.Gpio, 31.Gpio,
   2.Gpio, 12.Gpio, 22.Gpio, 32.Gpio,
@@ -29,26 +32,45 @@ type
 
 var Pins: seq[Pin] = @[]
 
-proc pin*(number: int, direction: PinDirection): Pin =
-  for p in Pins:
+proc pin*(number: static int, direction: PinDirection): Pin =
+  static:
     if number < 0:
-      let error_msg = $NegativePinError & "You set a negative number (" & $number & ") as a pin."
-      log(Error, error_msg)
-      raise newException(NegativePinError, error_msg)
-    elif number.uint8 == p.number:
-      log(Caution, "You are binding a pin already used:" & $number)
+      let error_msg = "You set a negative number (" & $number & ") as a pin. The minimum is 0."
+      raise newException(NegativePinNumberError, error_msg)
+    elif number > 35:
+      raise newException(PinNumberAbove35, "You set " & $number & " as a pin number, but the highest available is 35.")
+
+  for p in Pins:
+    if number.uint8 == p.number:
+      log(Caution, "You are binding a pin already used: " & $number)
       return p
 
-    result = Pin(number: number.uint8, direction: direction)
-    Pins.add(result)
+  result = Pin(number: number.uint8, direction: direction)
+  Pins.add(result)
 
-  GPIO_PINS[number].init()
-  GPIO_PINS[number].setDir(direction == OUT)
+  number.Gpio.init()
+  number.Gpio.setDir(direction == OUT)
 
-template pin_in*(number: int): Pin =
+proc in_pin*(number: static int): Pin =
   pin(number, IN)
 
-template out_pin*(number: int): Pin =
-  pin(number, OUT)
+proc out_pin*(number: static int): Pin =
+  pin(number, IN)
 
+proc `==`*(a, b: Pin): bool =
+  a.number == b.number
+
+proc `>`*(a, b: Pin): bool =
+  a.number > b.number
+
+proc `<`*(a, b: Pin): bool =
+  a.number < b.number
+
+proc high*(pin: Pin) =
+  if pin.direction == OUT: pin.number.Gpio.put(High)
+  else: discard # TODO: log an error
+
+proc low*(pin: Pin) = 
+  if pin.direction == OUT:  pin.number.Gpio.put(Low)
+  else: discard # TODO: log an error
 

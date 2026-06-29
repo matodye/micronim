@@ -1,4 +1,3 @@
-type NegativePinError* = object of ValueError
 
 type LogType* = enum
   Advice
