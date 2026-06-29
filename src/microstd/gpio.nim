@@ -28,25 +28,28 @@ type
   Pin = object
     number: uint8
     direction: PinDirection
-    pull: Pull = Down
+    pull: Pull
 
-var Pins: seq[Pin] = @[]
+let pins: seq[Pin] = @[]
+let usedPins = new array[0..35, bool]
 
-proc pin*(number: static int, direction: PinDirection): Pin =
+proc pin*(number: static int; direction: PinDirection; pull: Pull = Down): Pin =
   static:
     if number < 0:
       let error_msg = "You set a negative number (" & $number & ") as a pin. The minimum is 0."
       raise newException(NegativePinNumberError, error_msg)
     elif number > 35:
-      raise newException(PinNumberAbove35, "You set " & $number & " as a pin number, but the highest available is 35.")
+      let error_msg = "You set " & $number & " as a pin number, but the highest available is 35."
+      raise newException(PinNumberAbove35, error_msg)
 
-  for p in Pins:
-    if number.uint8 == p.number:
-      log(Caution, "You are binding a pin already used: " & $number)
-      return p
+  if usedPins[number]:
+    log(Caution, "You are binding a pin already used: " & $number & ". We will return the previous reference to this pin.")
+    return pins[number]
 
-  result = Pin(number: number.uint8, direction: direction)
-  Pins.add(result)
+  usedPins[number] = true
+  result = Pin(number: number.uint8, direction: direction, pull: pull)
+  pins.add(result)
+
   try:
     number.Gpio.init()
     number.Gpio.setDir(direction == OUT)
@@ -69,9 +72,11 @@ proc `>`*(a, b: Pin): bool =
 proc `<`*(a, b: Pin): bool =
   a.number < b.number
 
-proc high*(pin: Pin) =
-  try: pin.number.Gpio.put(High) except: discard  # TODO: add logic & log an error
+proc high*(self: Pin) =
+  try: self.number.Gpio.put(High) except: discard  # TODO: add logic & log an error
 
-proc low*(pin: Pin) = 
-  try: pin.number.Gpio.put(Low) except: discard  # TODO: add logic & log an error
+proc low*(self: Pin) = 
+  try: self.number.Gpio.put(Low) except: discard  # TODO: add logic & log an error
 
+proc is_used*(self: Pin): bool =
+  usedPins[self.number]
