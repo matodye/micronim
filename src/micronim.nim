@@ -3,3 +3,6 @@
 
 include microstd/gpio
 
+if isMainModule:
+  # TODO: make a nice interactive app
+  discard
