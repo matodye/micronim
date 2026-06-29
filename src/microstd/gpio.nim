@@ -58,7 +58,7 @@ proc in_pin*(number: static int): Pin =
   pin(number, IN)
 
 proc out_pin*(number: static int): Pin =
-  pin(number, IN)
+  pin(number, OUT)
 
 proc `==`*(a, b: Pin): bool =
   a.number == b.number
