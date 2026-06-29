@@ -47,9 +47,12 @@ proc pin*(number: static int, direction: PinDirection): Pin =
 
   result = Pin(number: number.uint8, direction: direction)
   Pins.add(result)
-
-  number.Gpio.init()
-  number.Gpio.setDir(direction == OUT)
+  try:
+    number.Gpio.init()
+    number.Gpio.setDir(direction == OUT)
+  except:
+    # TODO: add logic
+    discard
 
 proc in_pin*(number: static int): Pin =
   pin(number, IN)
@@ -67,10 +70,8 @@ proc `<`*(a, b: Pin): bool =
   a.number < b.number
 
 proc high*(pin: Pin) =
-  if pin.direction == OUT: pin.number.Gpio.put(High)
-  else: discard # TODO: log an error
+  try: pin.number.Gpio.put(High) except: discard  # TODO: add logic & log an error
 
 proc low*(pin: Pin) = 
-  if pin.direction == OUT:  pin.number.Gpio.put(Low)
-  else: discard # TODO: log an error
+  try: pin.number.Gpio.put(Low) except: discard  # TODO: add logic & log an error
 
